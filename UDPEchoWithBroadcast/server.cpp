@@ -282,7 +282,7 @@ std::string XOR(std::string input, int key, bool encode) {
 }
 
 void CServer::CheckPulse() {
-	TPacket _packetRecvd, _packetToSend;
+	TPacket _packetToSend;
 	std::string message = "Ping";
 	for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
 	{
@@ -295,7 +295,7 @@ void CServer::CheckPulse() {
 }
 
 void CServer::DropTheDead(){
-	TPacket _packetRecvd, _packetToSend;
+	TPacket _packetToSend;
 	std::string message = "";
 	int amountremoved = 0;
 	
@@ -348,7 +348,7 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 			int key = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.key;
 			message = "%" + XOR((dataItem.second.substr(2, dataItem.second.length()) + "#" + std::to_string(dataItem.first.sin_addr.S_un.S_un_b.s_b1) + "." + std::to_string(dataItem.first.sin_addr.S_un.S_un_b.s_b2) + "." + std::to_string(dataItem.first.sin_addr.S_un.S_un_b.s_b3) + "." + std::to_string(dataItem.first.sin_addr.S_un.S_un_b.s_b4)), key, true);
 			//ADD XOR KEY ON
-			int amountofch = floor(key / 10);
+			int amountofch = static_cast<int>(floor(key / 10));
 			for (size_t i = 0; i < amountofch; i++)
 			{
 				int tmp = (48 + rand() % 78);

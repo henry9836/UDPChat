@@ -104,7 +104,7 @@ bool CInputLineBuffer::Update()
 	std::string line;
 	std::getline(std::cin, line);
 	strcpy_s(m_pBuffer, line.size() + 1, line.c_str());
-	m_uBufferPos = line.length();
+	m_uBufferPos = static_cast<unsigned int>(line.length());
 	m_pBuffer[m_uBufferPos] = 0;
 
 	return true; //uses a blocking call now

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <chrono>
+#include <stdlib.h>
 //#include <vld.h>
 #include <thread>
 
@@ -27,6 +28,7 @@
 #include "network.h"
 #include "client.h"
 #include "server.h"
+#include "conio.h"
 #include "InputLineBuffer.h"
 #include <functional>
 
@@ -41,9 +43,18 @@ int WINDOW = 5;
 int cTIMEOUT = 23;
 int cWINDOW = 13;
 
+//A pointer to hold a client instance
+CClient* _pClient = nullptr;
+//A pointer to hold a server instance
+CServer* _pServer = nullptr;
+
+void CloseProgram() {
+	_pClient->DropUs();
+}
+
 int main()
 {
-	srand(time(NULL));
+	srand(static_cast<unsigned int>(time(NULL)));
 
 	high_resolution_clock::time_point start = high_resolution_clock::now();
 
@@ -62,11 +73,6 @@ int main()
 	//Get the instance of the network
 	CNetwork& _rNetwork = CNetwork::GetInstance();
 	_rNetwork.StartUp();
-
-	//A pointer to hold a client instance
-	CClient* _pClient = nullptr;
-	//A pointer to hold a server instance
-	CServer* _pServer = nullptr;
 
 	// query, is this to be a client or a server?
 	_ucChoice = QueryOption("Do you want to run a client or server (C/S)?", "CS");
@@ -118,6 +124,7 @@ int main()
 	{
 		if (_eNetworkEntityType == CLIENT) //if network entity is a client
 		{
+			atexit(CloseProgram);
 			_pClient = static_cast<CClient*>(_rNetwork.GetInstance().GetNetworkEntity());
 
 			//Prepare for reading input from the user

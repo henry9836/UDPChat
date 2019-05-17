@@ -45,6 +45,7 @@ public:
 	virtual void ReceiveData(char* _pcBufferToReceiveData);
 	virtual void CheckPulse();
 	virtual void DropTheDead();
+	virtual void DropUs();
 	virtual void ProcessData(char* _pcDataReceived);
 	virtual void GetRemoteIPAddress(char* _pcSendersIP);
 	virtual unsigned short GetRemotePort();

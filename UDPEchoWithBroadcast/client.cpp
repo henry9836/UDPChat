@@ -241,14 +241,14 @@ std::string XORClient(std::string input, int key, bool encode) {
 }
 
 int bruteForceKey(int hint, std::string input, std::string target) {
-	int output = 0;
+	size_t output = 0;
 	hint = (hint - 1) * 10;
 	std::string toCompare = "";
 	target = target.substr(1, target.size()); //Get rid of first letter because sometimes padding is not good
 	bool found = false;
 	for (size_t i = 0; i < 11; i++)
 	{
-		if (XORClient(input, hint + i, false).find(target) != std::string::npos) {
+		if (XORClient(input, hint + static_cast<int>(i), false).find(target) != std::string::npos) {
 			output = hint + i;
 			found = true;
 			break;
@@ -260,7 +260,7 @@ int bruteForceKey(int hint, std::string input, std::string target) {
 		exit(5);
 	}
 	//std::cout << "Done. Key found: " << output << std::endl; DEBUG
-	return output;
+	return static_cast<int>(output);
 }
 
 //Complete handshake and store auth info
@@ -291,7 +291,8 @@ void CClient::Handshake(TPacket _packetRecvd) {
 	tmp = XORClient(m_username, key, true);
 
 	char *cstr = new char[tmp.length() + 1];
-	strcpy(cstr, tmp.c_str());
+
+	strcpy_s(cstr, sizeof cstr,tmp.c_str());
 	
 	_packet.Serialize(AUTHRE, cstr);
 	
@@ -468,6 +469,12 @@ void CClient::DropTheDead() {
 		system("pause");
 		exit(0);
 	}
+}
+
+void CClient::DropUs() {
+	TPacket _packet;
+	_packet.Serialize(KEEPALIVE, const_cast<char*>("!quit"));
+	SendData(_packet.PacketData);
 }
 
 void CClient::ProcessData(char* _pcDataReceived)
