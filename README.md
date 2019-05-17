@@ -33,4 +33,4 @@ Commands can be called with a "!" followed by the command. For example "!help"
 
 !list - list connected users
 
-!quit - close connectio
+!quit - close connection
