@@ -23,7 +23,8 @@ Don't you love using UDP for a chatting application? Can't see how that could go
 
 Commands can be called with a "!" followed by the command. For example "!help"
 
-Command list:
+##### Command list:
+
 !help - displays this help text
 
 !motd - displays motd
