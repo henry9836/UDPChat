@@ -19,6 +19,8 @@ Don't you love using UDP for a chatting application? Can't see how that could go
 
 - Basic Handshake
 
+- Uses UDP instead of TCP how unique and diffently useful
+
 ### Commands
 
 Commands can be called with a "!" followed by the command. For example "!help"
