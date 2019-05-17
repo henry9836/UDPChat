@@ -25,7 +25,11 @@ Commands can be called with a "!" followed by the command. For example "!help"
 
 Command list:
 !help - displays this help text
+
 !motd - displays motd
-!chgmotd [new motd] - changes the motd
+
+!chgmotd new motd - changes the motd
+
 !list - list connected users
+
 !quit - close connectio
