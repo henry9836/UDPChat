@@ -193,7 +193,6 @@ bool CClient::Initialise()
 	m_username = _cUserName;
 
 	TPacket _packet;
-	//_packet.Serialize(HANDSHAKE, _cUserName); 
 	_packet.Serialize(INITCONN, _cUserName);
 	SendData(_packet.PacketData);
 	return true;
@@ -224,12 +223,10 @@ std::string XORClient(std::string input, int key, bool encode) {
 				tmpstr += input.at(i);
 			}
 			else {
-				//std::cout << tmpstr << std::endl;
 				toDecode.push_back(std::atoi(tmpstr.c_str()));
 				tmpstr = "";
 			}
 		}
-		//std::cout << tmpstr << std::endl;
 		toDecode.push_back(std::atoi(tmpstr.c_str()));
 		tmpstr = "";
 		for (size_t k = 0; k < toDecode.size(); k++)
@@ -238,7 +235,7 @@ std::string XORClient(std::string input, int key, bool encode) {
 			decodeTMP = xor; //convert to ascii
 			output += decodeTMP; //add to output
 		}
-		std::cout << "Output: " << output << " Key used: " << key << std::endl;
+		//std::cout << "Output: " << output << " Key used: " << key << std::endl; DEBUG
 	}
 	return output;
 }
@@ -262,7 +259,7 @@ int bruteForceKey(int hint, std::string input, std::string target) {
 		system("pause");
 		exit(5);
 	}
-	std::cout << "Done. Key found: " << output << std::endl;
+	//std::cout << "Done. Key found: " << output << std::endl; DEBUG
 	return output;
 }
 

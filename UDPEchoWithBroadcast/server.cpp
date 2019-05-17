@@ -298,16 +298,24 @@ void CServer::DropTheDead(){
 	TPacket _packetRecvd, _packetToSend;
 	std::string message = "";
 	int amountremoved = 0;
-	for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
+	
+	std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin();
+	while (it != (*m_pConnectedClients).end())
 	{
 		if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only check authed clients
-			if (!(*m_pConnectedClients)[it->first].m_bIsAlive) { //if client hasn't pinged then drop
-				message += "$ENDUser: " + (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authUser + " has disconnected (Timed out)";
-				it = (*m_pConnectedClients).erase(it); //remove user from list
-				
+			if (!(*m_pConnectedClients)[it->first].m_bIsAlive)
+			{
+				message += "$END User: " + (*m_pConnectedClients)[it->first].SECURITY.authUser + " disconnected (Timed Out)";
+				(*m_pConnectedClients).erase(it);
+				it = (*m_pConnectedClients).begin();
+			}
+			else
+			{
+				++it;
 			}
 		}
 	}
+
 	if (message != "") {
 		for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
 		{
@@ -351,7 +359,7 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 			SendDataTo(_packetToSend.PacketData, dataItem.first);
 		}
 		else {
-			std::cout << "Could not add the user" << std::endl;
+			std::cout << "Could not add user" << std::endl;
 		}
 		break;
 	}
