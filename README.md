@@ -25,7 +25,7 @@ Commands can be called with a "!" followed by the command. For example "!help"
 
 ##### Command list:
 
-!help - displays this help text
+!help - displays help text
 
 !motd - displays motd
 
