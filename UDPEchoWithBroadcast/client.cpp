@@ -320,6 +320,9 @@ bool CClient::BroadcastForServers()
 		m_ServerSocketAddress.sin_port = htons(DEFAULT_SERVER_PORT + i);
 		SendData(_packet.PacketData);
 	}
+	
+	Sleep(500);
+	
 	ReceiveBroadcastMessages(_pcTempBuffer);
 
 	return true;
