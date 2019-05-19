@@ -19,7 +19,7 @@ Don't you love using UDP for a chatting application? Can't see how that could go
 
 - Basic Handshake
 
-- Uses UDP instead of TCP how unique and diffently useful
+- Uses UDP instead of TCP how unique and definitely useful
 
 ### Commands
 
