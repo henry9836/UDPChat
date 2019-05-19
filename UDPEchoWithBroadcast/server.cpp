@@ -419,37 +419,14 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 
 			bool isCommand = false;
 
-			if (message.at(0) == COMMANDID.at(0)) {
-				isCommand = true;
-			}
+			if (message.length() >= 1){ //stop null strings from crashing server
+				if (message.at(0) == COMMANDID.at(0)) {
+					isCommand = true;
+				}
 
-			if (!isCommand){ //Chat
-				//Send to each user
-				message = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authUser + "> " + message;
-				for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
-				{
-					if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only authed clients can see msgs
-						_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
-						SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
-					}
-				}
-			}
-			else { //Command
-
-				if (message == COMMANDHELP) {
-					message = HELP;
-				}
-				else if (message.find(COMMANDCHGMOTD) != std::string::npos) {
-					MOTD = message.substr(COMMANDCHGMOTD.length() + 1, message.length());
-					message = "motd changed to: " + MOTD;
-				}
-				else if (message == COMMANDMOTD) {
-					message = MOTD;
-				}
-				else if (message == COMMANDQUIT) {
-					//CLOSE CONNECTION
-					(*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authStatus = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.NOAUTH; //Deauth user
-					message = "User: " + (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authUser + " has disconnected (User Disconnect)";
+				if (!isCommand){ //Chat
+					//Send to each user
+					message = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authUser + "> " + message;
 					for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
 					{
 						if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only authed clients can see msgs
@@ -457,24 +434,52 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 							SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
 						}
 					}
-					message = "QUIT";
-					_packetToSend.Serialize(CLOSE, const_cast<char*>(message.c_str()));
-					SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[ToString(m_ClientAddress)].m_ClientAddress);
-					m_pConnectedClients->erase(ToString(m_ClientAddress)); //remove user from list
 				}
-				else if (message == COMMANDLIST) {
-					message = "$ENDUsers in Chat:";
-					for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
-					{
-						message += "$END [" + (*m_pConnectedClients)[it->first].SECURITY.authUser + "]";
+				else { //Command
+
+					if (message == COMMANDHELP) {
+						message = HELP;
 					}
-					message += "$END";
-				}
-				else{
-					message = "Unknown Command";
-				}
-				_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
-				SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[ToString(m_ClientAddress)].m_ClientAddress);
+					else if (message.find(COMMANDCHGMOTD) != std::string::npos) {
+						if (message.length() > (COMMANDCHGMOTD.length() + 1)) {
+							MOTD = message.substr(COMMANDCHGMOTD.length() + 1, message.length());
+							message = "motd changed to: " + MOTD;
+						}
+
+					}
+					else if (message == COMMANDMOTD) {
+						message = MOTD;
+					}
+					else if (message == COMMANDQUIT) {
+						//CLOSE CONNECTION
+						(*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authStatus = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.NOAUTH; //Deauth user
+						message = "User: " + (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authUser + " has disconnected (User Disconnect)";
+						for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
+						{
+							if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only authed clients can see msgs
+								_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
+								SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
+							}
+						}
+						message = "QUIT";
+						_packetToSend.Serialize(CLOSE, const_cast<char*>(message.c_str()));
+						SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[ToString(m_ClientAddress)].m_ClientAddress);
+						m_pConnectedClients->erase(ToString(m_ClientAddress)); //remove user from list
+					}
+					else if (message == COMMANDLIST) {
+						message = "$ENDUsers in Chat:";
+						for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
+						{
+							message += "$END [" + (*m_pConnectedClients)[it->first].SECURITY.authUser + "]";
+						}
+						message += "$END";
+					}
+					else {
+						message = "Unknown Command";
+					}
+					_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
+					SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[ToString(m_ClientAddress)].m_ClientAddress);
+					}
 			}
 
 		}

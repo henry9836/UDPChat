@@ -475,9 +475,9 @@ void CClient::DropTheDead() {
 }
 
 void CClient::DropUs() {
-	TPacket _packet;
-	_packet.Serialize(KEEPALIVE, const_cast<char*>("!quit"));
-	SendData(_packet.PacketData);
+	//TPacket _packet;
+	//_packet.Serialize(KEEPALIVE, const_cast<char*>("!quit"));
+	//SendData(_packet.PacketData);
 }
 
 void CClient::ProcessData(char* _pcDataReceived)
