@@ -29,6 +29,7 @@
 //This includes
 #include "client.h"
 
+CClient myself;
 
 CClient::CClient()
 	:m_pcPacketData(0)
@@ -198,7 +199,7 @@ bool CClient::Initialise()
 	return true;
 }
 //Used for encoding and decoding
-std::string XORClient(std::string input, int key, bool encode) {
+std::string CClient::XORClient(std::string input, int key, bool encode) {
 	std::string output = "";
 	std::string split = "\\";
 	std::string tmpstr = "";
@@ -248,7 +249,7 @@ int bruteForceKey(int hint, std::string input, std::string target) {
 	bool found = false;
 	for (size_t i = 0; i < 11; i++)
 	{
-		if (XORClient(input, hint + static_cast<int>(i), false).find(target) != std::string::npos) {
+		if (myself.XORClient(input, hint + static_cast<int>(i), false).find(target) != std::string::npos) {
 			output = hint + i;
 			found = true;
 			break;
@@ -462,6 +463,7 @@ void CClient::ReceiveData(char* _pcBufferToReceiveData)
 void CClient::CheckPulse() {
 	TPacket _packet;
 	std::string message = "Ping";
+	message = XORClient(message, key, true);
 	_packet.Serialize(KEEPALIVEC, const_cast<char*>(m_username.c_str()));
 	SendData(_packet.PacketData);
 }
@@ -518,13 +520,17 @@ void CClient::ProcessData(char* _pcDataReceived)
 	}
 	case BROADCASTINIT: {
 		TPacket _packet;
-		_packet.Serialize(INITCONN, const_cast<char*>(m_username.c_str()));
+		std::string message = m_username;
+		message = XORClient("Pong", key, true);
+		_packet.Serialize(INITCONN, const_cast<char*>(message.c_str()));
 		SendData(_packet.PacketData);
 	}
 	case DATA:
 	{
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 		std::string input = _packetRecvd.MessageContent;
+		input = myself.XORClient(input, key, false);
+		input = input.substr(0, input.length()-1);
 		std::string ENDLN = "$END";
 		// Get the first occurrence
 		size_t pos = input.find(ENDLN);
@@ -543,7 +549,9 @@ void CClient::ProcessData(char* _pcDataReceived)
 	case KEEPALIVE:
 	{
 		TPacket _packet;
-		_packet.Serialize(KEEPALIVE, const_cast<char*>("Pong"));
+		std::string message = "";
+		message = XORClient("Pong", key, true);
+		_packet.Serialize(KEEPALIVE, const_cast<char*>(message.c_str()));
 		SendData(_packet.PacketData);
 		break;
 	}

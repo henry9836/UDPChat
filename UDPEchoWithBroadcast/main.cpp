@@ -133,12 +133,17 @@ int main()
 			//Get input from the user
 			if (_InputBuffer.Update())
 			{
+
+				std::string msg = _InputBuffer.GetString();
+
+				msg = _pClient->XORClient(msg, _pClient->key, true);
+
 				// we completed a message, lets send it:
-				int _iMessageSize = static_cast<int>(strlen(_InputBuffer.GetString()));
+				//int _iMessageSize = static_cast<int>(strlen(_InputBuffer.GetString()));
 
 				//Put the message into a packet structure
 				TPacket _packet;
-				_packet.Serialize(DATA, const_cast<char*>(_InputBuffer.GetString())); 
+				_packet.Serialize(DATA, const_cast<char*>(msg.c_str()));
 				_rNetwork.GetInstance().GetNetworkEntity()->SendData(_packet.PacketData);
 				//Clear the Input Buffer
 				_InputBuffer.ClearString();

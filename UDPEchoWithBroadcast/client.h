@@ -40,6 +40,7 @@ public:
 	// Methods
 	
 	virtual bool Initialise(); //Implicit in the intialization is the creation and binding of the socket
+	virtual std::string XORClient(std::string input, int key, bool encode);
 	void Handshake(TPacket _packetRecvd);
 	virtual bool SendData(char* _pcDataToSend);
 	virtual void ReceiveData(char* _pcBufferToReceiveData);

@@ -276,17 +276,17 @@ std::string XOR(std::string input, int key, bool encode) {
 			decodeTMP = xor; //convert to ascii
 			output += decodeTMP; //add to output
 		}
-		std::cout << "Output: " << output << " Key used: " << key << std::endl;
 	}
 	return output;
 }
 
 void CServer::CheckPulse() {
 	TPacket _packetToSend;
-	std::string message = "Ping";
+	std::string templ = "Ping";
 	for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
 	{
 		if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only check authed clients
+			std::string message = XOR(templ, (*m_pConnectedClients)[it->first].SECURITY.key, true); //encode
 			_packetToSend.Serialize(KEEPALIVE, const_cast<char*>(message.c_str()));
 			(*m_pConnectedClients)[it->first].m_bIsAlive = false;
 			SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
@@ -296,6 +296,7 @@ void CServer::CheckPulse() {
 
 void CServer::DropTheDead(){
 	TPacket _packetToSend;
+	std::string templ = "";
 	std::string message = "";
 	int amountremoved = 0;
 	
@@ -305,7 +306,7 @@ void CServer::DropTheDead(){
 		if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only check authed clients
 			if (!(*m_pConnectedClients)[it->first].m_bIsAlive)
 			{
-				message += "$END User: " + (*m_pConnectedClients)[it->first].SECURITY.authUser + " disconnected (Timed Out)";
+				templ += "$END User: " + (*m_pConnectedClients)[it->first].SECURITY.authUser + " disconnected (Timed Out)";
 				(*m_pConnectedClients).erase(it);
 				it = (*m_pConnectedClients).begin();
 			}
@@ -316,10 +317,11 @@ void CServer::DropTheDead(){
 		}
 	}
 
-	if (message != "") {
+	if (templ != "") {
 		for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
 		{
 			if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only authed clients can see msgs
+				message = XOR(templ, (*m_pConnectedClients)[it->first].SECURITY.key, true); //encode
 				_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
 				SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
 			}
@@ -338,7 +340,7 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 	{
 	case INITCONN:
 	{
-		std::string message = "Users in chatroom : ";
+		std::string message = "";
 		std::cout << "Server received a request to start a handshake" << std::endl;
 		if (AddClient(_packetRecvd.MessageContent))
 		{
@@ -387,9 +389,10 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 			(*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authStatus = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE;
 			
 			//Send to each user that user has joined chat
-			std::string message = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authUser + " has connected to the chat!";
+			std::string templ = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authUser + " has connected to the chat!";
 			for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
 			{
+				std::string message = XOR(templ, (*m_pConnectedClients)[it->first].SECURITY.key, true); //encode
 				_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
 				SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
 			}
@@ -413,9 +416,13 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 	{
 		if ((*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) {
 
-			std::string message = _packetRecvd.MessageContent;
 
-			message = message.substr(1, message.length()); //fix padding
+
+			std::string message = XOR(_packetRecvd.MessageContent, (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.key, false); //decode
+
+			std::cout << "Decoded: " << message << std::endl;
+
+			message = message.substr(0, message.length()-1); //fix padding
 
 			bool isCommand = false;
 
@@ -427,9 +434,11 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 				if (!isCommand){ //Chat
 					//Send to each user
 					message = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authUser + "> " + message;
+					std::string templ = message;
 					for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
 					{
 						if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only authed clients can see msgs
+							message = XOR(templ, (*m_pConnectedClients)[it->first].SECURITY.key, true); //encode
 							_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
 							SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
 						}
@@ -454,9 +463,11 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 						//CLOSE CONNECTION
 						(*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authStatus = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.NOAUTH; //Deauth user
 						message = "User: " + (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authUser + " has disconnected (User Disconnect)";
+						std::string templ = message;
 						for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
 						{
 							if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only authed clients can see msgs
+								message = XOR(templ, (*m_pConnectedClients)[it->first].SECURITY.key, true); //encode
 								_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
 								SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
 							}
@@ -477,6 +488,7 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 					else {
 						message = "Unknown Command";
 					}
+					message = XOR(message, (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.key, true); //encode
 					_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
 					SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[ToString(m_ClientAddress)].m_ClientAddress);
 					}
