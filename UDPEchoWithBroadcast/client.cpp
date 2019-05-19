@@ -292,7 +292,7 @@ void CClient::Handshake(TPacket _packetRecvd) {
 
 	char *cstr = new char[tmp.length() + 1];
 
-	strcpy_s(cstr, sizeof cstr,tmp.c_str());
+	strcpy_s(cstr, tmp.length() + 1 , tmp.c_str());
 	
 	_packet.Serialize(AUTHRE, cstr);
 	
