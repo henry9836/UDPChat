@@ -21,6 +21,8 @@ Don't you love using UDP for a chatting application? Can't see how that could go
 
 - Uses UDP instead of TCP how unique and definitely useful
 
+- Kick command
+
 ### Commands
 
 Commands can be called with a "!" followed by the command. For example "!help"
@@ -34,5 +36,7 @@ Commands can be called with a "!" followed by the command. For example "!help"
 !chgmotd new motd - changes the motd
 
 !list - list connected users
+
+!kick username - kicks user
 
 !quit - close connection
