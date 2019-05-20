@@ -514,8 +514,16 @@ void CClient::ProcessData(char* _pcDataReceived)
 	}
 	case HANDSHAKE_SUCCESS:
 	{
+		TPacket _packet;
+		std::string message = "";
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 		std::cout << "SERVER> " << _packetRecvd.MessageContent << std::endl;
+		message = XORClient("!motd", key, true);
+		_packet.Serialize(DATA, const_cast<char*>(message.c_str()));
+		SendData(_packet.PacketData);
+		message = XORClient("!list", key, true);
+		_packet.Serialize(DATA, const_cast<char*>(message.c_str()));
+		SendData(_packet.PacketData);
 		break;
 	}
 	case BROADCASTINIT: {

@@ -38,10 +38,12 @@
 using namespace std::chrono;
 
 bool InitPulse = true;
-int TIMEOUT = 20;
-int WINDOW = 5;
-int cTIMEOUT = 23;
-int cWINDOW = 13;
+int TIMEOUT = 10;
+int WINDOW = 10;
+int cTIMEOUT = 11;
+int cWINDOW = 11;
+int MAXRETRY = 10;
+int retryCount = 0;
 
 //A pointer to hold a client instance
 CClient* _pClient = nullptr;
@@ -156,17 +158,27 @@ int main()
 				auto timeElapsed = duration_cast<seconds>(end - start).count();
 
 				if (_pClient->InitPulse && (timeElapsed > cTIMEOUT)) {
-					_pClient->ConnectionAlive = false;
+					if (retryCount == 0) {
+						_pClient->ConnectionAlive = false;
+					}
 					_pClient->CheckPulse();
-					_pClient->InitPulse = false;
-					start = high_resolution_clock::now();
+					retryCount++;
+					if (retryCount >= MAXRETRY) {
+						start = high_resolution_clock::now();
+						_pClient->InitPulse = false;
+					}
 				}
-				else if (!_pClient->InitPulse && timeElapsed > cWINDOW) {
-					_pClient->DropTheDead(); //Drop any clients that have taken too long to respond
+				else if ((!_pClient->InitPulse && timeElapsed > cWINDOW) && retryCount >= MAXRETRY) {
+					_pClient->DropTheDead(); //Drop server because of timeout
 					_pClient->InitPulse = true;
 					start = high_resolution_clock::now();
-
+					retryCount = 0;
 				}
+				//else {
+				//	_pClient->CheckPulse();
+				//	start = high_resolution_clock::now();
+				//	retryCount++;
+				//}
 				//If the message queue is empty 
 				if (_pClient->GetWorkQueue()->empty())
 				{
@@ -189,20 +201,28 @@ int main()
 			{
 				high_resolution_clock::time_point end = high_resolution_clock::now();
 				auto timeElapsed = duration_cast<seconds>(end - start).count();
-				
+
 				if (InitPulse && (timeElapsed > TIMEOUT)) {
-					_pServer->CheckPulse(); //Check connection health of client
-					InitPulse = false;
-					start = high_resolution_clock::now();
 					std::cout << "Sent out pulse" << std::endl;
+					_pServer->CheckPulse();
+					retryCount++;
+					if (retryCount >= MAXRETRY) {
+						start = high_resolution_clock::now();
+						InitPulse = false;
+					}
 				}
-				else if (!InitPulse && timeElapsed > WINDOW) {
+				else if ((!InitPulse && timeElapsed > WINDOW) && retryCount >= MAXRETRY) {
 					std::cout << "Dropping the dead..." << std::endl;
 					_pServer->DropTheDead(); //Drop any clients that have taken too long to respond
 					InitPulse = true;
 					start = high_resolution_clock::now();
-					
+					retryCount = 0;
 				}
+				//else {
+				//	_pServer->CheckPulse();
+				//	start = high_resolution_clock::now();
+				//	retryCount++;
+				//}
 				if (!_pServer->GetWorkQueue()->empty())
 				{
 					_rNetwork.GetInstance().GetNetworkEntity()->GetRemoteIPAddress(_cIPAddress);

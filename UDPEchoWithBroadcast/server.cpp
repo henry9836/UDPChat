@@ -572,6 +572,32 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 	}
 
 	default:
+		std::string message = "You are not authorised to connect to this server!";
+
+		//go from 0-10 and give error msg
+
+		_packetToSend.Serialize(PACKERROR, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
+		_packetToSend.Serialize(PACKERROR1, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
+		_packetToSend.Serialize(PACKERROR2, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
+		_packetToSend.Serialize(PACKERROR3, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
+		_packetToSend.Serialize(PACKERROR4, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
+		_packetToSend.Serialize(PACKERROR5, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
+		_packetToSend.Serialize(PACKERROR6, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
+		_packetToSend.Serialize(PACKERROR7, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
+		_packetToSend.Serialize(PACKERROR8, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
+		_packetToSend.Serialize(PACKERROR9, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
+		_packetToSend.Serialize(PACKERROR10, const_cast<char*>(message.c_str()));
+		SendData(_packetToSend.PacketData);
 		break;
 
 	}
