@@ -43,6 +43,7 @@ struct USSD {
 	int authStatus = NOAUTH;
 	std::string authIP = "";
 	std::string authUser = "";
+	bool markedforDeath = false;
 };
 
 //Structure to hold the details of all connected clients
@@ -64,7 +65,7 @@ public:
 	//MESSAGES
 
 	std::string MOTD = "$END-= WELCOME TO THE UDP CHAT SERVER =-$END";
-	const std::string HELP = "$END[Commands]$END !help - displays this help text$END !motd - displays motd$END !chgmotd [new motd] - changes the motd$END !list - list connected users$END !quit - close connection";
+	const std::string HELP = "$END[Commands]$END !help - displays this help text$END !motd - displays motd$END !chgmotd [new motd] - changes the motd$END !list - list connected users$END !kick [user] - Kicks the user from the server$END !quit - close connection";
 
 	//COMMANDS
 
@@ -73,6 +74,7 @@ public:
 	const std::string COMMANDMOTD = "!motd";
 	const std::string COMMANDCHGMOTD = "!chgmotd";
 	const std::string COMMANDQUIT = "!quit";
+	const std::string COMMANDKICK = "!kick";
 	const std::string COMMANDLIST = "!list";
 
 	// Virtual Methods from the Network Entity Interface.

@@ -285,7 +285,7 @@ void CServer::CheckPulse() {
 	std::string templ = "Ping";
 	for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
 	{
-		if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only check authed clients
+		if (((*m_pConnectedClients)[it->first].SECURITY.authStatus != (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHING) || (*m_pConnectedClients)[it->first].SECURITY.markedforDeath) { //only check authed clients
 			std::string message = XOR(templ, (*m_pConnectedClients)[it->first].SECURITY.key, true); //encode
 			_packetToSend.Serialize(KEEPALIVE, const_cast<char*>(message.c_str()));
 			(*m_pConnectedClients)[it->first].m_bIsAlive = false;
@@ -303,7 +303,7 @@ void CServer::DropTheDead(){
 	std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin();
 	while (it != (*m_pConnectedClients).end())
 	{
-		if ((*m_pConnectedClients)[it->first].SECURITY.authStatus == (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE) { //only check authed clients
+		if (((*m_pConnectedClients)[it->first].SECURITY.authStatus != (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHING) || (*m_pConnectedClients)[it->first].SECURITY.markedforDeath) { //only check authed clients
 			if (!(*m_pConnectedClients)[it->first].m_bIsAlive)
 			{
 				templ += "$END User: " + (*m_pConnectedClients)[it->first].SECURITY.authUser + " disconnected (Timed Out)";
@@ -314,6 +314,10 @@ void CServer::DropTheDead(){
 			{
 				++it;
 			}
+		}
+		else {//otherwise if we are authing the client then check a flag to say client has taken at least one dead loop and if it is marked next time to drop it
+			(*m_pConnectedClients)[it->first].SECURITY.markedforDeath = true;
+			++it; 
 		}
 	}
 
@@ -348,6 +352,7 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 			//If this is first AUTH then we need create an xor challenge
 			std::map<std::string, char> m;
 			int key = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.key;
+			m_pConnectedClients->at(ToString(m_ClientAddress)).SECURITY.authStatus = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHING;
 			message = "%" + XOR((dataItem.second.substr(2, dataItem.second.length()) + "#" + std::to_string(dataItem.first.sin_addr.S_un.S_un_b.s_b1) + "." + std::to_string(dataItem.first.sin_addr.S_un.S_un_b.s_b2) + "." + std::to_string(dataItem.first.sin_addr.S_un.S_un_b.s_b3) + "." + std::to_string(dataItem.first.sin_addr.S_un.S_un_b.s_b4)), key, true);
 			//ADD XOR KEY ON
 			int amountofch = static_cast<int>(floor(key / 10));
@@ -387,6 +392,7 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 			_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
 			SendDataTo(_packetToSend.PacketData, dataItem.first);
 			(*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authStatus = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.AUTHCOMPLETE;
+			(*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.markedforDeath = false; //reset if was set by drop dead
 			
 			//Send to each user that user has joined chat
 			std::string templ = (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.authUser + " has connected to the chat!";
@@ -458,6 +464,43 @@ void CServer::ProcessData(std::pair<sockaddr_in, std::string> dataItem)
 					}
 					else if (message == COMMANDMOTD) {
 						message = MOTD;
+					}
+					else if (message.find(COMMANDKICK) != std::string::npos) {
+						if (message.length() > (COMMANDKICK.length() + 1)) {
+							std::string target = message.substr(COMMANDKICK.length() + 1, message.length());
+							bool hasKicked = false;
+							std::map<std::string, TClientDetails>::const_iterator targetLock;
+							for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
+							{
+								if ((*m_pConnectedClients)[it->first].SECURITY.authUser == target) {
+									(*m_pConnectedClients)[it->first].SECURITY.authStatus = (*m_pConnectedClients)[it->first].SECURITY.NOAUTH;
+									(*m_pConnectedClients)[it->first].SECURITY.markedforDeath = true;
+									std::string message = XOR("You have been kicked from the server", (*m_pConnectedClients)[it->first].SECURITY.key, true); //encode
+									_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
+									SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
+									message = "QUIT";
+									_packetToSend.Serialize(CLOSE, const_cast<char*>(message.c_str()));
+									SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
+									hasKicked = true;
+									targetLock = it;
+								}
+							}
+							if (hasKicked) {
+								std::string templ = (*m_pConnectedClients)[targetLock->first].SECURITY.authUser + " has been kicked from the chat!";
+								for (std::map<std::string, TClientDetails>::const_iterator it = (*m_pConnectedClients).begin(); it != (*m_pConnectedClients).end(); ++it)
+								{
+									std::string message = XOR(templ, (*m_pConnectedClients)[it->first].SECURITY.key, true); //encode
+									_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
+									SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[it->first].m_ClientAddress);
+								}
+								m_pConnectedClients->erase(targetLock); //remove user from list
+							}
+							else {
+								std::string message = XOR("Could not find username", (*m_pConnectedClients)[ToString(m_ClientAddress)].SECURITY.key, true); //encode
+								_packetToSend.Serialize(DATA, const_cast<char*>(message.c_str()));
+								SendDataTo(_packetToSend.PacketData, (*m_pConnectedClients)[ToString(m_ClientAddress)].m_ClientAddress);
+							}
+						}
 					}
 					else if (message == COMMANDQUIT) {
 						//CLOSE CONNECTION
