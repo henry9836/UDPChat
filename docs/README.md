@@ -1,5 +1,5 @@
 # UDPChat
-![Title](https://raw.githubusercontent.com/henry9836/UDPChat/master/title.gif)
+![Title](https://raw.githubusercontent.com/henry9836/UDPChat/master/docs/title.gif)
 #### Henry Oliver
 Don't you love using UDP for a chatting application? Can't see how that could go wrong...
 
